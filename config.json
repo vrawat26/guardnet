@@ -1,0 +1,7 @@
+{
+  "blocked_apps": [
+    "RobloxPlayerBeta.exe",
+    "Discord.exe"
+  ],
+  "daily_limit_minutes": 60
+}
