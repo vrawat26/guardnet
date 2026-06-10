@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🛡 Family Guard</title>
+<style>
+/* ── Reset & base ── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d1117;color:#e6edf3;min-height:100vh}
+
+/* ── Login ── */
+#login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0d1117}
+.login-card{background:#161b22;border:1px solid #30363d;border-radius:16px;padding:44px 40px;width:360px;text-align:center}
+.login-card .shield{font-size:48px;margin-bottom:16px}
+.login-card h1{font-size:22px;font-weight:700;color:#fff;margin-bottom:6px}
+.login-card p{color:#8b949e;font-size:13px;margin-bottom:28px}
+.login-card input{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:8px;
+  color:#e6edf3;padding:11px 14px;font-size:14px;outline:none;margin-bottom:12px;transition:border .2s}
+.login-card input:focus{border-color:#388bfd}
+.login-card .login-btn{width:100%;background:#238636;color:white;border:none;border-radius:8px;
+  padding:12px;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s}
+.login-card .login-btn:hover{background:#2ea043}
+.err-msg{color:#f85149;font-size:13px;margin-top:8px;display:none}
+
+/* ── App shell ── */
+#app{display:none;flex-direction:column;min-height:100vh}
+
+/* ── Topbar ── */
+.topbar{background:#161b22;border-bottom:1px solid #30363d;padding:0 24px;
+  display:flex;align-items:center;gap:14px;height:56px;position:sticky;top:0;z-index:200}
+.topbar .logo{font-size:16px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
+.topbar .logo span{font-size:20px}
+.topbar .spacer{flex:1}
+.pill{background:#21262d;border:1px solid #30363d;border-radius:20px;
+  padding:4px 12px;font-size:12px;color:#8b949e;display:flex;align-items:center;gap:6px}
+.pill .dot{width:7px;height:7px;border-radius:50%}
+.dot-green{background:#3fb950}
+.dot-red{background:#f85149}
+.dot-gray{background:#6e7681}
+.topbar-btn{background:transparent;border:1px solid #30363d;border-radius:6px;color:#8b949e;
+  padding:5px 12px;font-size:12px;cursor:pointer;transition:all .15s}
+.topbar-btn:hover{border-color:#8b949e;color:#e6edf3}
+
+/* ── Server URL bar ── */
+.url-bar{background:#161b22;border-bottom:1px solid #21262d;padding:8px 24px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.url-bar label{font-size:12px;color:#8b949e;white-space:nowrap}
+.url-bar input{background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;
+  padding:5px 10px;font-size:12px;outline:none;width:340px;transition:border .2s}
+.url-bar input:focus{border-color:#388bfd}
+.url-bar .connect-btn{background:#1f6feb;color:white;border:none;border-radius:6px;
+  padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer}
+.url-bar .connect-btn:hover{background:#388bfd}
+.url-bar .status-txt{font-size:12px}
+
+/* ── Main content ── */
+.content{padding:24px;flex:1}
+
+/* ── Summary bar ── */
+.summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px 18px}
+.stat-card .val{font-size:28px;font-weight:700;color:#fff;line-height:1}
+.stat-card .lbl{font-size:12px;color:#8b949e;margin-top:4px}
+.stat-card .val.green{color:#3fb950}
+.stat-card .val.red{color:#f85149}
+.stat-card .val.blue{color:#388bfd}
+
+/* ── Device grid ── */
+.section-title{font-size:14px;font-weight:600;color:#8b949e;text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:14px}
+.device-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:18px}
+
+/* ── Device card ── */
+.dev-card{background:#161b22;border:1px solid #30363d;border-radius:12px;overflow:hidden;
+  transition:border-color .2s}
+.dev-card:hover{border-color:#388bfd}
+.dev-card.locked-card{border-color:#f85149}
+
+.dev-hdr{padding:14px 16px;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid #21262d;background:#0d1117}
+.dev-avatar{width:36px;height:36px;border-radius:50%;background:#1f6feb;display:flex;
+  align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0}
+.dev-name{font-weight:700;font-size:15px;color:#fff;flex:1}
+.dev-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px}
+.badge-online{background:#1a3c25;color:#3fb950;border:1px solid #2ea043}
+.badge-offline{background:#2d1b1b;color:#f85149;border:1px solid #da3633}
+.badge-locked{background:#2d1b1b;color:#f85149;border:1px solid #da3633}
+
+.dev-body{padding:16px}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.mini-stat{background:#0d1117;border-radius:8px;padding:10px 12px;text-align:center}
+.mini-stat .v{font-size:18px;font-weight:700;color:#fff}
+.mini-stat .l{font-size:10px;color:#8b949e;margin-top:2px}
+.mini-stat .v.warn{color:#d29922}
+.mini-stat .v.danger{color:#f85149}
+
+/* Progress bar */
+.prog-wrap{margin-bottom:14px}
+.prog-label{display:flex;justify-content:space-between;font-size:11px;color:#8b949e;margin-bottom:5px}
+.prog-bar{height:6px;background:#21262d;border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .4s}
+.prog-green{background:#3fb950}
+.prog-yellow{background:#d29922}
+.prog-red{background:#f85149}
+
+/* Active app */
+.active-row{background:#0d1117;border-radius:8px;padding:9px 12px;margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;font-size:12px}
+.active-row .lbl{color:#8b949e}
+.active-row .val{color:#e6edf3;font-weight:600;font-family:monospace}
+
+/* Buttons row */
+.btn-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.btn{border:none;border-radius:7px;padding:7px 13px;font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.btn:hover{opacity:.85}
+.btn:active{transform:scale(.97)}
+.btn-green{background:#238636;color:white}
+.btn-red{background:#da3633;color:white}
+.btn-blue{background:#1f6feb;color:white}
+.btn-gray{background:#21262d;color:#c9d1d9;border:1px solid #30363d}
+.btn-orange{background:#9e6a03;color:white}
+.btn-full{width:100%;justify-content:center}
+
+/* Screen time setter */
+.limit-row{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.limit-row input{flex:1;background:#0d1117;border:1px solid #30363d;border-radius:6px;
+  color:#e6edf3;padding:7px 10px;font-size:12px;outline:none}
+.limit-row input:focus{border-color:#388bfd}
+
+/* Alert sender */
+.alert-row{display:flex;gap:8px;margin-bottom:14px}
+.alert-row input{flex:1;background:#0d1117;border:1px solid #30363d;border-radius:6px;
+  color:#e6edf3;padding:7px 10px;font-size:12px;outline:none}
+.alert-row input:focus{border-color:#388bfd}
+
+/* Blocked apps */
+.blocked-section{border-top:1px solid #21262d;padding-top:12px}
+.blocked-title{font-size:11px;font-weight:600;color:#8b949e;text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.blocked-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;max-height:80px;overflow-y:auto}
+.app-tag{background:#21262d;border:1px solid #30363d;border-radius:6px;padding:3px 8px;
+  font-size:11px;font-family:monospace;color:#c9d1d9;display:flex;align-items:center;gap:5px}
+.app-tag .rm{color:#8b949e;cursor:pointer;font-size:13px;line-height:1;padding:0 1px}
+.app-tag .rm:hover{color:#f85149}
+.add-app-row{display:flex;gap:6px}
+.add-app-row input{flex:1;background:#0d1117;border:1px solid #30363d;border-radius:6px;
+  color:#e6edf3;padding:6px 9px;font-size:11px;outline:none;font-family:monospace}
+.add-app-row input:focus{border-color:#388bfd}
+.add-app-row input::placeholder{color:#484f58}
+
+/* Empty state */
+.empty{grid-column:1/-1;text-align:center;padding:80px 20px;color:#484f58}
+.empty .icon{font-size:48px;margin-bottom:12px}
+.empty h2{font-size:18px;color:#6e7681;margin-bottom:6px}
+.empty p{font-size:13px}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:#238636;color:white;
+  border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;z-index:999;
+  opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.err{background:#da3633}
+
+@media(max-width:600px){
+  .device-grid{grid-template-columns:1fr}
+  .topbar{padding:0 14px}
+  .content{padding:14px}
+  .url-bar{padding:8px 14px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="login">
+  <div class="login-card">
+    <div class="shield">🛡</div>
+    <h1>Family Guard</h1>
+    <p>Parental Control Dashboard</p>
+    <input type="password" id="pw-input" placeholder="Password" autocomplete="off">
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="err-msg" id="err-msg">Incorrect password</div>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app">
+  <div class="topbar">
+    <div class="logo"><span>🛡</span> Family Guard</div>
+    <div class="spacer"></div>
+    <div class="pill" id="conn-pill">
+      <div class="dot dot-gray" id="conn-dot"></div>
+      <span id="conn-txt">Disconnected</span>
+    </div>
+    <button class="topbar-btn" onclick="doLogout()">Sign out</button>
+  </div>
+
+  <div class="url-bar">
+    <label>Server URL:</label>
+    <input id="server-url" placeholder="https://guardnet-4bkw.onrender.com" type="text">
+    <button class="connect-btn" onclick="connect()">Connect</button>
+    <span class="status-txt" id="url-status" style="color:#8b949e"></span>
+  </div>
+
+  <div class="content">
+    <div class="summary" id="summary">
+      <div class="stat-card"><div class="val green" id="s-online">0</div><div class="lbl">Online</div></div>
+      <div class="stat-card"><div class="val red" id="s-offline">0</div><div class="lbl">Offline</div></div>
+      <div class="stat-card"><div class="val red" id="s-locked">0</div><div class="lbl">Locked</div></div>
+      <div class="stat-card"><div class="val blue" id="s-total">0</div><div class="lbl">Total Devices</div></div>
+    </div>
+
+    <div class="section-title">Connected Devices</div>
+    <div class="device-grid" id="grid">
+      <div class="empty">
+        <div class="icon">🖥</div>
+        <h2>No devices yet</h2>
+        <p>Run <strong>start_agent.bat</strong> on the child's PC.<br>Set the server URL above and click Connect.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const DASHBOARD_PW = "parent123";
+let SERVER = localStorage.getItem("fg_server") || "";
+let _pollTimer = null;
+let _devices = {};
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+function doLogin() {
+  const pw = document.getElementById("pw-input").value;
+  if (pw === DASHBOARD_PW) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("app").style.display = "flex";
+    const saved = localStorage.getItem("fg_server");
+    if (saved) {
+      document.getElementById("server-url").value = saved;
+      connect();
+    }
+  } else {
+    document.getElementById("err-msg").style.display = "block";
+    document.getElementById("pw-input").value = "";
+  }
+}
+function doLogout() {
+  document.getElementById("login").style.display = "flex";
+  document.getElementById("app").style.display = "none";
+  stopPoll();
+}
+document.getElementById("pw-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") doLogin();
+});
+
+// ── Connection ────────────────────────────────────────────────────────────────
+function connect() {
+  const url = document.getElementById("server-url").value.trim().replace(/\/$/, "");
+  if (!url) return;
+  SERVER = url;
+  localStorage.setItem("fg_server", url);
+  setConnStatus("connecting");
+  fetchDevices();
+  stopPoll();
+  _pollTimer = setInterval(fetchDevices, 4000);
+}
+function stopPoll() {
+  if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+}
+function setConnStatus(state) {
+  const dot = document.getElementById("conn-dot");
+  const txt = document.getElementById("conn-txt");
+  const st  = document.getElementById("url-status");
+  if (state === "ok") {
+    dot.className = "dot dot-green";
+    txt.textContent = "Connected";
+    st.style.color = "#3fb950";
+    st.textContent = "✓ Live";
+  } else if (state === "err") {
+    dot.className = "dot dot-red";
+    txt.textContent = "Error";
+    st.style.color = "#f85149";
+    st.textContent = "✗ Cannot reach server";
+  } else {
+    dot.className = "dot dot-gray";
+    txt.textContent = "Connecting…";
+    st.style.color = "#8b949e";
+    st.textContent = "";
+  }
+}
+
+// ── Fetch ─────────────────────────────────────────────────────────────────────
+async function api(path, method="GET", body=null) {
+  const opts = { method, headers: { "Content-Type": "application/json" } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(SERVER + path, opts);
+  if (!res.ok) throw new Error(res.status);
+  return res.json();
+}
+
+async function fetchDevices() {
+  try {
+    const data = await api("/devices");
+    setConnStatus("ok");
+    _devices = data;
+    renderAll(data);
+  } catch(e) {
+    setConnStatus("err");
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderAll(data) {
+  const ids = Object.keys(data);
+  let online=0, offline=0, locked=0;
+  ids.forEach(id => {
+    const d = data[id];
+    if (d.online) online++; else offline++;
+    if (d.locked) locked++;
+  });
+  document.getElementById("s-online").textContent  = online;
+  document.getElementById("s-offline").textContent = offline;
+  document.getElementById("s-locked").textContent  = locked;
+  document.getElementById("s-total").textContent   = ids.length;
+
+  const grid = document.getElementById("grid");
+  if (!ids.length) {
+    grid.innerHTML = `<div class="empty"><div class="icon">🖥</div><h2>No devices yet</h2>
+      <p>Run <strong>start_agent.bat</strong> on the child's PC.</p></div>`;
+    return;
+  }
+  // Add new cards, update existing
+  ids.forEach(id => {
+    const existing = document.getElementById("card-" + id);
+    const card = buildCard(id, data[id]);
+    if (existing) existing.replaceWith(card);
+    else grid.appendChild(card);
+  });
+  // Remove stale cards
+  grid.querySelectorAll(".dev-card").forEach(el => {
+    const id = el.id.replace("card-","");
+    if (!data[id]) el.remove();
+  });
+  // Remove empty state
+  const em = grid.querySelector(".empty");
+  if (em && ids.length) em.remove();
+}
+
+function buildCard(id, d) {
+  const div = document.createElement("div");
+  div.className = "dev-card" + (d.locked ? " locked-card" : "");
+  div.id = "card-" + id;
+
+  const pct    = d.limit >= 9999 ? 0 : Math.min(100, Math.round(d.screen_time / d.limit * 100));
+  const pClass = pct >= 90 ? "prog-red" : pct >= 70 ? "prog-yellow" : "prog-green";
+  const vClass = pct >= 90 ? "danger" : pct >= 70 ? "warn" : "";
+  const limitStr = d.limit >= 9999 ? "∞" : d.limit + " min";
+  const badge  = d.locked ? `<span class="dev-badge badge-locked">🔒 LOCKED</span>`
+               : d.online ? `<span class="dev-badge badge-online">● Online</span>`
+                          : `<span class="dev-badge badge-offline">● Offline</span>`;
+
+  const blockedTags = (d.blocked_apps || []).map(app =>
+    `<span class="app-tag">${app}
+      <span class="rm" onclick="removeApp('${id}','${app}')" title="Remove">✕</span>
+    </span>`
+  ).join("");
+
+  div.innerHTML = `
+    <div class="dev-hdr">
+      <div class="dev-avatar">${id[0].toUpperCase()}</div>
+      <span class="dev-name">${id}</span>
+      ${badge}
+    </div>
+    <div class="dev-body">
+
+      <div class="stats-row">
+        <div class="mini-stat">
+          <div class="v ${vClass}">${d.screen_time}</div>
+          <div class="l">mins used</div>
+        </div>
+        <div class="mini-stat">
+          <div class="v">${limitStr}</div>
+          <div class="l">daily limit</div>
+        </div>
+        <div class="mini-stat">
+          <div class="v">${(d.blocked_apps||[]).length}</div>
+          <div class="l">apps blocked</div>
+        </div>
+      </div>
+
+      ${d.limit < 9999 ? `
+      <div class="prog-wrap">
+        <div class="prog-label">
+          <span>Screen time</span><span>${pct}%</span>
+        </div>
+        <div class="prog-bar"><div class="prog-fill ${pClass}" style="width:${pct}%"></div></div>
+      </div>` : ""}
+
+      <div class="active-row">
+        <span class="lbl">Active app:</span>
+        <span class="val">${d.active_app || "unknown"}</span>
+      </div>
+
+      <div class="btn-row">
+        ${d.locked
+          ? `<button class="btn btn-green" onclick="cmdUnlock('${id}')">🔓 Unlock PC</button>`
+          : `<button class="btn btn-red" onclick="cmdLock('${id}')">🔒 Lock PC</button>`
+        }
+        <button class="btn btn-orange" onclick="cmdReset('${id}')">⏱ Reset Timer</button>
+      </div>
+
+      <div class="limit-row">
+        <input id="limit-${id}" type="number" min="1" max="1440"
+               placeholder="Daily limit (minutes)" value="${d.limit >= 9999 ? "" : d.limit}">
+        <button class="btn btn-blue" onclick="cmdSetLimit('${id}')">Set Limit</button>
+      </div>
+
+      <div class="alert-row">
+        <input id="msg-${id}" type="text" placeholder="📢 Send message to screen…" maxlength="120"
+               onkeydown="if(event.key==='Enter')cmdAlert('${id}')">
+        <button class="btn btn-blue" onclick="cmdAlert('${id}')">Send</button>
+      </div>
+
+      <div class="blocked-section">
+        <div class="blocked-title">
+          <span>Blocked Apps</span>
+          <span style="color:#484f58;font-weight:400">${(d.blocked_apps||[]).length} active</span>
+        </div>
+        <div class="blocked-list">${blockedTags || '<span style="color:#484f58;font-size:11px">No apps blocked</span>'}</div>
+        <div class="add-app-row">
+          <input id="new-app-${id}" type="text" placeholder="Add app.exe…"
+                 onkeydown="if(event.key==='Enter')addApp('${id}')">
+          <button class="btn btn-gray" style="white-space:nowrap" onclick="addApp('${id}')">+ Block</button>
+        </div>
+      </div>
+
+    </div>`;
+  return div;
+}
+
+// ── Commands ──────────────────────────────────────────────────────────────────
+async function cmdLock(id) {
+  try { await api("/lock?device_id="+id, "POST", {device_id:id, app_name:""}); toast("PC locked"); fetchDevices(); }
+  catch(e) { toast("Error", true); }
+}
+async function cmdUnlock(id) {
+  try { await api("/unlock?device_id="+id, "POST", {device_id:id, app_name:""}); toast("PC unlocked"); fetchDevices(); }
+  catch(e) { toast("Error", true); }
+}
+async function cmdReset(id) {
+  try { await api("/reset_timer", "POST", {device_id:id, app_name:""}); toast("Timer reset"); fetchDevices(); }
+  catch(e) { toast("Error", true); }
+}
+async function cmdSetLimit(id) {
+  const val = parseInt(document.getElementById("limit-"+id).value);
+  if (!val || val < 1) return toast("Enter a valid number of minutes", true);
+  try { await api("/set_limit", "POST", {device_id:id, limit:val}); toast(`Limit set to ${val} min`); fetchDevices(); }
+  catch(e) { toast("Error", true); }
+}
+async function cmdAlert(id) {
+  const inp = document.getElementById("msg-"+id);
+  const msg = inp.value.trim();
+  if (!msg) return;
+  try { await api("/alert", "POST", {device_id:id, message:msg}); toast("Message sent"); inp.value=""; }
+  catch(e) { toast("Error", true); }
+}
+async function addApp(id) {
+  const inp = document.getElementById("new-app-"+id);
+  const name = inp.value.trim();
+  if (!name) return;
+  const appName = name.endsWith(".exe") ? name : name + ".exe";
+  try { await api("/add_blocked_app", "POST", {device_id:id, app_name:appName}); toast(`Blocked ${appName}`); inp.value=""; fetchDevices(); }
+  catch(e) { toast("Error", true); }
+}
+async function removeApp(id, app) {
+  try { await api("/remove_blocked_app", "POST", {device_id:id, app_name:app}); toast(`Unblocked ${app}`); fetchDevices(); }
+  catch(e) { toast("Error", true); }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let _toastTimer = null;
+function toast(msg, err=false) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (err ? " err" : "");
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.className = "toast", 2500);
+}
+</script>
+</body>
+</html>
